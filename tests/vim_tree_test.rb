@@ -62,6 +62,24 @@ class VimTreeLineTest < Test::Unit::TestCase
     assert_equal "app/1Password", @vtree.overall
   end
 
+  def test_stop_moving_up_chain
+    @vtree.window = MockWindow.new(9, 3)
+    @vtree.buffer = MockBuffer.new(["<< apache/", "<< app/", "  + 1Password/"])
+    assert_equal "app/1Password", @vtree.overall
+  end
+
+  def test_ignore_siblings
+    @vtree.window = MockWindow.new(9, 3)
+    @vtree.buffer = MockBuffer.new(["<< app/", "  + 1Password/", "  + FaceTime/"])
+    assert_equal "app/FaceTime", @vtree.overall
+  end
+
+  def test_ignore_more_siblings
+    @vtree.window = MockWindow.new(9, 5)
+    @vtree.buffer = MockBuffer.new(["<< app/", "  + 1Password/", "  + /", "  + App Store/", "  + FaceTime/"])
+    assert_equal "app/FaceTime", @vtree.overall
+  end
+
   def ts(str, pos=0, field=0)
     ret = @vtree.get_token_and_start(str, pos)
     return ret if field == -1

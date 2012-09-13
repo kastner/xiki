@@ -22,6 +22,7 @@ class VimTree
     while (start > 0) do
       start -= 1
       left_str = line[start..old_start]
+      return [nil, nil] if left_str.nil?
       break if is_special?(left_str)
       break if left_str[0].chr.match(/\W/)
     end
@@ -109,7 +110,7 @@ class VimTree
       end
     end
 
-    puts "path to pass to xiki: #{clean_up(tokens)}"
+    #puts "path to pass to xiki: #{clean_up(tokens)}"
     return clean_up(tokens)
   end
 
@@ -118,6 +119,6 @@ class VimTree
   end
 
   def is_special?(token)
-    token.start_with?(*SPECIALS)
+    token && token.start_with?(*SPECIALS)
   end
 end
