@@ -9,6 +9,9 @@ class Tree
 end
 
 class VimTree
+  attr_writer :window, :buffer
+  SPECIALS = %w[* << + -]
+
   def get_token_and_start(line, start=nil)
     start = start || get_cursor[0] # x position of the cursor
     line = obj.line if line.respond_to?(:line)
@@ -19,35 +22,71 @@ class VimTree
     while (start > 0) do
       start -= 1
       left_str = line[start..old_start]
+      break if is_special?(left_str)
       break if left_str[0].chr.match(/\W/)
     end
 
+
+    #line = adjust_for_special(line, start)
     start = start+1 unless line[start].chr == " " || start == 0
-    start = start-1 if is_special?(line[start-1].chr)
+    start = start - special_length(line[start-1, 3]) if is_special?(line[start-1, 2])
+    #start = start-1 if is_special?(line[start-1, 2])
     start = start+1 if line[start].chr == " "
 
-    str = line[start..-1][/((. )?.+?)(\s|$)/, 1]
-    str = nil if str == " "
+    if line.index('/')
+      str = line[/^.*\//]
+    else
+      str = line[/^.*(\/|$)/]
+    end
+
+    str.lstrip!
+    str = nil if str.empty?
     start = nil if str.nil?
     return [str, start]
   end
 
-  def get_cursor(obj=VIM::Window.current)
-    obj.cursor.reverse
+  def adjust_for_special(cline, start)
+    #start -= 1 unless start == 0
+    line = cline[start, -1]
+
+    #strip_special(line)
   end
 
-  def get_line(i, obj=VIM::Buffer.current)
+  def special_length(line)
+    return 0 unless is_special?(line)
+    SPECIALS.each do |special|
+      return special.length+1 if (line.index(special) == 0)
+    end
+  end
+
+  def strip_special(line)
+    line[special_length(line)..-2]
+  end
+
+  def get_cursor
+    window.cursor.reverse
+  end
+
+  def get_line(i)
     begin
-      return obj[i]
+      return buffer[i]
     rescue IndexError
       puts Kernel.caller.inspect
     end
   end
 
+  def buffer
+    @buffer || VIM::Buffer.current
+  end
+
+  def window
+    @window || VIM::Window.current
+  end
+
   def overall
     start = get_cursor[0]
     token, start = get_token_and_start(get_line(get_cursor[1]), start)
-    unless is_special?(token[0].chr)
+    unless is_special?(token)
       return token
     end
 
@@ -70,14 +109,15 @@ class VimTree
       end
     end
 
+    puts "path to pass to xiki: #{clean_up(tokens)}"
     return clean_up(tokens)
   end
 
   def clean_up(tokens)
-    return tokens.reverse.map{|t| t[/^(. )?(.*)$/,2]}.join("/")
+    return tokens.reverse.map{|s| strip_special(s)}.join("/")
   end
 
-  def is_special?(char)
-    ["+", "-"].include?(char)
+  def is_special?(token)
+    token.start_with?(*SPECIALS)
   end
 end
