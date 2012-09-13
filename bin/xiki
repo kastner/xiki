@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+
+#
+# > Summary
+# This file is aliased to /usr/local/bin/xiki, so it can be
+# called from the command line.  It exposes xiki menus.
+#
+# > Example
+# $ xiki ip
+#   111.1.1.111
+#
+# To create the alias, see:
+# @xiki/setup/install command/
+#
+
+require 'rubygems'
+
+# Generate with correct path (see below)
+xiki_dir = File.expand_path "#{File.dirname(__FILE__)}/.."
+
+$:.unshift "#{xiki_dir}/lib" #.sub(/\/$/, '')
+
+require "xiki/ol"
+require "xiki/core_ext"
+
+$:.unshift "#{xiki_dir}/etc/command"
+
+require "xiki_command.rb"
+
+result = XikiCommand.run
+puts result if result != ""
+
+exit 0

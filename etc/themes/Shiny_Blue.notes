@@ -1,0 +1,23 @@
+Styles.mode_line(
+  :bg=>'6483af',
+  :border=>['6483af', 3],
+  :face=>"arial",
+  :bold=>true,
+  :size=>'1',
+  :fg=>'001122'
+  )
+
+Styles.mode_line_inactive(
+  :bg=>'bbbbbb',
+  :border=>['bbbbbb', 3],
+  :face=>"arial",
+  :bold=>true,
+  :size=>'1',
+  :fg=>'555555'
+  )
+
+Styles.mode_line_file(
+  :fg=>"fff",
+  :face=>"arial",
+  :bold=>true
+  )
