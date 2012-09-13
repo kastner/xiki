@@ -1,8 +1,8 @@
 class Line
-  def self.number
-    $curbuf.line_number
+  def self.number(number=nil)
+    number = number || $curbuf.line_number
   end
   def self.value
-    $curbuf.line
+    $curbuf.[number]
   end
 end
