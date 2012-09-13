@@ -3,6 +3,6 @@ class Line
     number = number || $curbuf.line_number
   end
   def self.value
-    $curbuf.[number]
+    $curbuf[number]
   end
 end

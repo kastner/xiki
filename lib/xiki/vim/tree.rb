@@ -9,24 +9,7 @@ class Tree
 end
 
 class VimTree
-  # recursive fucnction that stops when there are no more lines above with +
-  def get_parent
-
-  end
-
-  # hard coding for now - tw spaces are valid
-  def valid_char?(char, prev, prev2)
-    return false if char.nil?
-
-    # take care of nasty edge case first
-    return true if char == "+" && prev == " " && prev2.match(/\w/)
-
-    return false if char == " "
-    return false if [char, prev, prev2].all? { |a| [' ', "\n", "\t"].any? {|ch| a == ch} }
-    return true
-  end
-
-  def get_token(line, start=nil)
+  def get_token_and_start(line, start=nil)
     start = start || get_cursor[0] # x position of the cursor
     line = obj.line if line.respond_to?(:line)
 
@@ -36,60 +19,65 @@ class VimTree
     while (start > 0) do
       start -= 1
       left_str = line[start..old_start]
-      break if left_str[0].match(/\W/)
+      break if left_str[0].chr.match(/\W/)
     end
 
-    start = start+1 unless line[start] == " "
-    start = start-1 if line[start-1] == "+"
+    start = start+1 unless line[start].chr == " " || start == 0
+    start = start-1 if is_special?(line[start-1].chr)
+    start = start+1 if line[start].chr == " "
 
-    str = line[start..-1][/((\+ )?.+?)\s|$/, 1]
-    return str
-  end
-
-  def g3et_token(line, start=nil)
-    start = start || get_cursor[0] # x position of the cursor
-    line = obj.line if line.respond_to?(:line)
-    pos = start
-    oldpos1 = pos
-    oldpos2 = pos
-
-    while valid_char?(line[pos], oldpos1, oldpos2)
-      puts "pos is now #{pos} - #{line[pos]}"
-      oldpos2 = oldpos1
-      oldpos1 = line[pos]
-      pos -= 1
-    end
-
-    start_pos = pos - 1
-    pos = start[0]
-
-    while valid_char?(line[pos], oldpos1, oldpos2)
-      puts "pos is now #{pos} DUEX"
-      oldpos2 = oldpos1
-      oldpos1 = line[pos]
-      pos += 1
-    end
-
-    end_pos = pos
-    puts "end #{end_pos}, start #{start_pos}, str #{line}"
-    return line[start_pos..end_pos]
+    str = line[start..-1][/((. )?.+?)(\s|$)/, 1]
+    str = nil if str == " "
+    start = nil if str.nil?
+    return [str, start]
   end
 
   def get_cursor(obj=VIM::Window.current)
-    obj.cursor.chomp.split("\n").reverse
+    obj.cursor.reverse
+  end
+
+  def get_line(i, obj=VIM::Buffer.current)
+    begin
+      return obj[i]
+    rescue IndexError
+      puts Kernel.caller.inspect
+    end
   end
 
   def overall
-    # get the current token
-    # move left to the begining
-    # is it a top-level (no +)
-    #   execute teh command
-    # move up, check for plus
-    #   is it a plus?
-    #     move up
-    #   is it whitespace?
-    #     move up
-    #   is it non-whitespace?
-    #     figure out the token, repeat procedure
+    start = get_cursor[0]
+    token, start = get_token_and_start(get_line(get_cursor[1]), start)
+    unless is_special?(token[0].chr)
+      return token
+    end
+
+    tokens = [token]
+
+    line_number = get_cursor[1]
+    
+    while (line_number > 1 && line = get_line(line_number))  
+      line_number -= 1
+
+      token, start = get_token_and_start(line, start)
+      break unless token
+
+      # check to see if this is higher level or same
+      token2, new_start = get_token_and_start(get_line(line_number), start - 2)
+      break unless token2
+
+      if new_start - start == -2
+        tokens << token2
+      end
+    end
+
+    return clean_up(tokens)
+  end
+
+  def clean_up(tokens)
+    return tokens.reverse.map{|t| t[/^(. )?(.*)$/,2]}.join("/")
+  end
+
+  def is_special?(char)
+    ["+", "-"].include?(char)
   end
 end
