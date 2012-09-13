@@ -17,22 +17,31 @@ class VimTree
     line = obj.line if line.respond_to?(:line)
 
     left_str = line[start, 1]
+    #return [nil, nil] if left_str.start_with?(" ", "+", "/")
+    # puts "FIRST HIT CHAR: #{left_str}"
 
     old_start = start
+    last_non_space = start
     while (start > 0) do
       start -= 1
       left_str = line[start..old_start]
       return [nil, nil] if left_str.nil?
-      break if is_special?(left_str)
-      break if left_str[0].chr.match(/\W/)
+      #return [nil, nil]  if is_special?(left_str)
+      return [nil, nil] unless left_str[0]
+      #break if left_str[0].chr.match(/\W/)
+      unless left_str.index(/\s/) == 0
+        if last_non_space - start < 5 # artibrary magic number
+          last_non_space = start
+        else
+          break
+        end
+      end
+      break  if is_special?(left_str)
     end
 
+    start = last_non_space if last_non_space > start
 
-    #line = adjust_for_special(line, start)
-    start = start+1 unless line[start].chr == " " || start == 0
-    start = start - special_length(line[start-1, 3]) if is_special?(line[start-1, 2])
-    #start = start-1 if is_special?(line[start-1, 2])
-    start = start+1 if line[start].chr == " "
+    line = line[start..-1]
 
     if line.index('/')
       str = line[/^.*\//]
@@ -102,12 +111,14 @@ class VimTree
       break unless token
 
       # check to see if this is higher level or same
-      token2, new_start = get_token_and_start(get_line(line_number), start - 2)
+      token2, new_start = get_token_and_start(get_line(line_number), start-1)
       break unless token2
 
       if new_start - start == -2
         tokens << token2
       end
+
+      break if tokens.last.start_with?("<<")
     end
 
     #puts "path to pass to xiki: #{clean_up(tokens)}"

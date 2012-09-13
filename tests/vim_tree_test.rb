@@ -48,12 +48,21 @@ class VimTreeLineTest < Test::Unit::TestCase
     assert_equal 1, ts(" + test/", 1, 1)
   end
 
+  def test_weird_start2
+    assert_equal 2, ts("  < test/", 5, 1)
+  end
+
   def test_1pwd_string
     assert_equal "1Password/", ts("1Password/")
   end
 
   def test_app
     assert_equal "app", ts("app", 1)
+  end
+
+  def test_app_with_whitespace
+    assert_equal "<< app/", ts("    << app/", 8)
+    assert_equal 4, ts("    << app/", 8, 1)
   end
 
   def test_app_1pwd
@@ -80,9 +89,42 @@ class VimTreeLineTest < Test::Unit::TestCase
     assert_equal "app/FaceTime", @vtree.overall
   end
 
+  def test_ignore_even_more_siblings
+    @vtree.window = MockWindow.new(15, 19)
+    @vtree.buffer = MockBuffer.new(big_example)
+    assert_equal "app/Calculator", @vtree.overall
+  end
+
   def ts(str, pos=0, field=0)
     ret = @vtree.get_token_and_start(str, pos)
     return ret if field == -1
     return ret[field]
+  end
+
+  def big_example
+    %Q{
+  all
+    << accounts/
+    << address book/
+    << agenda/
+    << all/
+    << amazon/
+    << apache/
+    << app/
+      + 1Password/
+      + /
+      + /
+      + /
+      + Adobe Download Assistant/
+      + /
+      + /
+      + App Store/
+      + Automator/
+      + Calculator/
+      + Calendar/
+      + Chess/
+      + Cloud/
+      + Contacts/
+    }.split("\n")
   end
 end
